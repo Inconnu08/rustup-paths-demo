@@ -1,9 +1,11 @@
 mod cli;
 mod env;
+mod resolver;
 
 use clap::Parser;
 use cli::{Cli, Commands};
-use env::EnvPaths;
+use crate::env::EnvPaths;
+use crate::resolver::resolve_paths;
 
 fn main() {
     let cli = Cli::parse();
@@ -16,19 +18,27 @@ fn main() {
         }
     };
 
+    let resolved = match resolve_paths(&env, cli.use_xdg) {
+        Ok(paths) => paths,
+        Err(err) => {
+            eprintln!("error: {err}");
+            std::process::exit(1);
+        }
+    };
+
     match cli.command {
         Commands::Resolve => {
-            println!("{env:#?}");
+            println!("{resolved:#?}");
         }
         Commands::Explain => {
-            println!("{env:#?}");
+            println!("{resolved:#?}");
         }
         Commands::MigratePlan => {
-            println!("{env:#?}");
+            println!("{resolved:#?}");
         }
         Commands::Migrate { execute } => {
             println!("migrate command, execute={execute}");
-            println!("{env:#?}");
+            println!("{resolved:#?}");
         }
     }
 }
