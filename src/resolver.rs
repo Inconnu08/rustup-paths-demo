@@ -1,6 +1,6 @@
+use crate::config::AppConfig;
+use crate::env::{EnvPaths, join};
 use serde::Serialize;
-
-use crate::env::{join, EnvPaths};
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize)]
@@ -25,7 +25,11 @@ pub struct ResolutionReport {
     pub warnings: Vec<String>,
 }
 
-pub fn resolve_paths(env: &EnvPaths, use_xdg: bool) -> Result<ResolutionReport, String> {
+pub fn resolve_paths(
+    env: &EnvPaths,
+    config: &AppConfig,
+    use_xdg: bool,
+) -> Result<ResolutionReport, String> {
     // we should follow a precedence order:
     // - config file overrides takes the highest priority
     // - followed by env vars for backwards compatibility
@@ -35,8 +39,17 @@ pub fn resolve_paths(env: &EnvPaths, use_xdg: bool) -> Result<ResolutionReport, 
     let mut decisions = Vec::new();
     let mut warnings = Vec::new();
 
+    let overrides = config.overrides.clone().unwrap_or_default();
+
     // config dir
-    let config_dir = if let Some(rustup_home) = &env.rustup_home {
+    let config_dir = if let Some(path) = overrides.config_dir {
+        decisions.push(decision(
+            "config_dir",
+            path.clone(),
+            "using config file override for config_dir",
+        ));
+        path
+    } else if let Some(rustup_home) = &env.rustup_home {
         decisions.push(decision(
             "config_dir",
             rustup_home.clone(),
@@ -62,7 +75,14 @@ pub fn resolve_paths(env: &EnvPaths, use_xdg: bool) -> Result<ResolutionReport, 
     };
 
     // data dir
-    let data_dir = if let Some(rustup_home) = &env.rustup_home {
+    let data_dir = if let Some(path) = overrides.data_dir {
+        decisions.push(decision(
+            "data_dir",
+            path.clone(),
+            "using config file override for data_dir",
+        ));
+        path
+    } else if let Some(rustup_home) = &env.rustup_home {
         decisions.push(decision(
             "data_dir",
             rustup_home.clone(),
@@ -88,7 +108,14 @@ pub fn resolve_paths(env: &EnvPaths, use_xdg: bool) -> Result<ResolutionReport, 
     };
 
     // cache dir
-    let cache_dir = if let Some(rustup_home) = &env.rustup_home {
+    let cache_dir = if let Some(path) = overrides.cache_dir {
+        decisions.push(decision(
+            "cache_dir",
+            path.clone(),
+            "using config file override for cache_dir",
+        ));
+        path
+    } else if let Some(rustup_home) = &env.rustup_home {
         let path = join(rustup_home, "tmp");
         decisions.push(decision(
             "cache_dir",
@@ -115,7 +142,14 @@ pub fn resolve_paths(env: &EnvPaths, use_xdg: bool) -> Result<ResolutionReport, 
     };
 
     // bin dir
-    let bin_dir = if let Some(cargo_home) = &env.cargo_home {
+    let bin_dir = if let Some(path) = overrides.bin_dir {
+        decisions.push(decision(
+            "bin_dir",
+            path.clone(),
+            "using config file override for bin_dir",
+        ));
+        path
+    } else if let Some(cargo_home) = &env.cargo_home {
         let path = join(cargo_home, "bin");
         decisions.push(decision(
             "bin_dir",
@@ -135,7 +169,15 @@ pub fn resolve_paths(env: &EnvPaths, use_xdg: bool) -> Result<ResolutionReport, 
 
     if env.rustup_home.is_some() && use_xdg {
         warnings.push(
-            "RUSTUP_HOME is set; XDG mode does not change rustup directories.".to_string(),
+            "RUSTUP_HOME is set; XDG mode does not change rustup directories unless config overrides are used."
+                .to_string(),
+        );
+    }
+
+    if env.cargo_home.is_some() {
+        warnings.push(
+            "CARGO_HOME is set; bin_dirr follows legacy cargo behavior unless explicitly overridden in config."
+                .to_string(),
         );
     }
 
