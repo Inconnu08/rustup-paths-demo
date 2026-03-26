@@ -53,6 +53,25 @@ impl EnvPaths {
             .or_else(dirs::cache_dir)
             .unwrap_or_else(|| self.home.join(".cache"))
     }
+
+    #[cfg(test)]
+    pub fn from_values(
+        home: impl Into<PathBuf>,
+        rustup_home: Option<PathBuf>,
+        cargo_home: Option<PathBuf>,
+        xdg_config_home: Option<PathBuf>,
+        xdg_data_home: Option<PathBuf>,
+        xdg_cache_home: Option<PathBuf>,
+    ) -> Self {
+        Self {
+            home: home.into(),
+            rustup_home,
+            cargo_home,
+            xdg_config_home,
+            xdg_data_home,
+            xdg_cache_home,
+        }
+    }
 }
 
 pub fn join<P: AsRef<Path>>(base: P, child: &str) -> PathBuf {

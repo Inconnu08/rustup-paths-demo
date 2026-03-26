@@ -1,0 +1,5 @@
+[overrides]
+config_dir = "/tmp/my-rustup-config"
+data_dir = "/tmp/my-rustup-data"
+cache_dir = "/tmp/my-rustup-cache"
+bin_dir = "/tmp/my-cargo-bin"

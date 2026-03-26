@@ -200,3 +200,60 @@ fn decision(name: &str, selected_path: PathBuf, reason: &str) -> PathDecision {
         reason: reason.to_string(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{AppConfig, PathOverrides};
+    use std::path::PathBuf;
+
+    fn p(s: &str) -> PathBuf {
+        PathBuf::from(s)
+    }
+
+    #[test]
+    fn xdg_mode_without_overrides() {
+        let env = EnvPaths::from_values(p("/home/alice"), None, None, None, None, None);
+        let cfg = AppConfig::default();
+
+        let report = resolve_paths(&env, &cfg, true).unwrap();
+        assert_eq!(report.resolved.config_dir, p("/home/alice/.config/rustup"));
+        assert_eq!(report.resolved.data_dir, p("/home/alice/.local/share/rustup"));
+        assert_eq!(report.resolved.cache_dir, p("/home/alice/.cache/rustup"));
+        assert_eq!(report.resolved.bin_dir, p("/home/alice/.cargo/bin"));
+    }
+
+    #[test]
+    fn explicit_rustup_home_wins() {
+        let env = EnvPaths::from_values(
+            p("/home/alice"),
+            Some(p("/custom/rustup")),
+            None,
+            None,
+            None,
+            None,
+        );
+        let cfg = AppConfig::default();
+
+        let report = resolve_paths(&env, &cfg, true).unwrap();
+        assert_eq!(report.resolved.config_dir, p("/custom/rustup"));
+        assert_eq!(report.resolved.data_dir, p("/custom/rustup"));
+        assert_eq!(report.resolved.cache_dir, p("/custom/rustup/tmp"));
+    }
+
+    #[test]
+    fn config_override_wins() {
+        let env = EnvPaths::from_values(p("/home/alice"), None, None, None, None, None);
+        let cfg = AppConfig {
+            overrides: Some(PathOverrides {
+                config_dir: Some(p("/override/config")),
+                data_dir: None,
+                cache_dir: None,
+                bin_dir: None,
+            }),
+        };
+
+        let report = resolve_paths(&env, &cfg, true).unwrap();
+        assert_eq!(report.resolved.config_dir, p("/override/config"));
+    }
+}
