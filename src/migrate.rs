@@ -1,15 +1,17 @@
+use serde::Serialize;
+
 use crate::env::EnvPaths;
 use crate::resolver::ResolutionReport;
 use std::path::PathBuf;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MigrationStep {
     pub from: PathBuf,
     pub to: PathBuf,
     pub description: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MigrationPlan {
     pub warnings: Vec<String>,
     pub steps: Vec<MigrationStep>,

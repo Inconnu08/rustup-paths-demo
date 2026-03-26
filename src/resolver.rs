@@ -1,7 +1,9 @@
+use serde::Serialize;
+
 use crate::env::{join, EnvPaths};
 use std::path::PathBuf;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ResolvedPaths {
     pub config_dir: PathBuf,
     pub data_dir: PathBuf,
@@ -9,14 +11,14 @@ pub struct ResolvedPaths {
     pub bin_dir: PathBuf,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PathDecision {
     pub name: String,
     pub selected_path: PathBuf,
     pub reason: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ResolutionReport {
     pub resolved: ResolvedPaths,
     pub decisions: Vec<PathDecision>,
