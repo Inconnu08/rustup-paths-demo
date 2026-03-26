@@ -1,10 +1,12 @@
 mod cli;
 mod env;
+mod migrate;
 mod resolver;
 
 use clap::Parser;
 use crate::cli::{Cli, Commands};
 use crate::env::EnvPaths;
+use crate::migrate::build_migration_plan;
 use crate::resolver::resolve_paths;
 
 fn main() {
@@ -29,10 +31,14 @@ fn main() {
     match cli.command {
         Commands::Resolve => println!("{:#?}", report.resolved),
         Commands::Explain => println!("{:#?}", report),
-        Commands::MigratePlan => println!("{:#?}", report),
+        Commands::MigratePlan => {
+            let plan = build_migration_plan(&report, &env);
+            println!("{:#?}", plan);
+        }
         Commands::Migrate { execute } => {
+            let plan = build_migration_plan(&report, &env);
             println!("migrate command, execute={execute}");
-            println!("{:#?}", report);
+            println!("{:#?}", plan);
         }
     }
 }
