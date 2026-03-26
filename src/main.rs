@@ -5,11 +5,11 @@ mod report;
 mod resolver;
 
 use clap::Parser;
-use crate::cli::{Cli, Commands};
-use crate::env::EnvPaths;
-use crate::migrate::build_migration_plan;
-use crate::report::{print_explain, print_migration_plan, print_resolve};
-use crate::resolver::resolve_paths;
+use cli::{Cli, Commands};
+use env::EnvPaths;
+use migrate::{apply_migration_plan, build_migration_plan};
+use report::{print_explain, print_migration_plan, print_resolve};
+use resolver::resolve_paths;
 
 fn main() {
     let cli = Cli::parse();
@@ -39,8 +39,28 @@ fn main() {
         }
         Commands::Migrate { execute } => {
             let plan = build_migration_plan(&report, &env);
-            println!("migrate command, execute={execute}");
-            print_migration_plan(&plan, cli.json);
+
+            if !execute {
+                println!("Dry run only. Use `migrate --execute` to perform filesystem changes.\n");
+                print_migration_plan(&plan, cli.json);
+                return;
+            }
+
+            match apply_migration_plan(&plan) {
+                Ok(summary) => {
+                    println!("Migration completed.");
+                    println!("moved:   {}", summary.moved);
+                    println!("skipped: {}", summary.skipped);
+                    println!();
+                    for msg in summary.messages {
+                        println!("- {msg}");
+                    }
+                }
+                Err(err) => {
+                    eprintln!("migration failed: {err}");
+                    std::process::exit(1);
+                }
+            }
         }
     }
 }
