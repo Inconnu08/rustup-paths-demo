@@ -206,6 +206,10 @@ pub fn resolve_paths(
     };
 
     // bin_dir
+    // rustup installs "shims" (proxy binaries) into the bin directory.
+    // These must stay compatible with CARGO_HOME/bin to preserve PATH behavir
+    // so even in XDG mode, we keep bin_dir conservative to avoid breaking existing workflows
+    // Decoupling rustup shims from cargo's bin directory is a future goal...
     let bin_dir = if let Some(cargo_home) = &env.cargo_home {
         let path = join(cargo_home, "bin");
         decisions.push(decision(
